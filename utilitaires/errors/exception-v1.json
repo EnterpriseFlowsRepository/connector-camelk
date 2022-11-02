@@ -1,0 +1,6 @@
+{
+  "code": "${exchangeProperty.exception-code}",
+  "className": "${exception.class.name}",
+  "detail": "${exchangeProperty.exception-message}",
+  "stacktrace": "${exchangeProperty.exception-stacktrace}"
+}

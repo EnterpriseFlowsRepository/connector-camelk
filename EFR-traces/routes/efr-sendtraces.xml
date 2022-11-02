@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- camel-k: language=xml -->
+<!-- camel-k: dependency=mvn:xalan:xalan:2.7.1 -->
+<!-- camel-k: dependency=camel-azure-servicebus -->
+<!-- camel-k: dependency=camel-quarkus-opentelemetry dependency=mvn:io.quarkus:quarkus-opentelemetry-exporter-otlp -->
+
+<routes xmlns="http://camel.apache.org/schema/spring">
+  
+      <!-- appel depuis /annonces -->
+      <route id="efr-sendtraces" trace="{{efr-sendtraces.trace}}">
+
+        <!-- on exeception, create a message on exceptions.exception -->
+        <onException useOriginalMessage="false">
+          <exception>java.lang.Exception</exception>
+          <setProperty name="routeId">
+            <simple>$routeId</simple>
+          </setProperty>
+          <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
+          <log message="history: ${messageHistory}" loggingLevel="WARN"/>
+          <toD uri="{{messaging.exceptions.exception}}" />
+        </onException>
+
+        <onException useOriginalMessage="true">
+          <exception>java.lang.Exception</exception>
+          <handled><constant>true</constant></handled>
+          <log message="Error: ${exception}  with Body: ${body}" loggingLevel="ERROR"/>
+          <toD uri="{{messaging.queue.traces-errors}}" />
+        </onException>
+
+        <!-- read from topic -->
+        <from uri="{{messaging.queue.traces-traces}}" />
+
+        <!-- Get OIDC token -->
+        <step id="oidc">
+          <!-- Message text -->
+          <convertBodyTo type="String"/>
+          <setProperty name="body">
+            <simple>${body}</simple>
+          </setProperty>
+
+          <!-- get token -->
+          <to uri="direct:oidc-getToken-cache"/>
+          
+        </step>
+
+        <!-- Send trace to EFR -->
+        <step id="efr">
+          <!-- Replace with original message -->
+          <setBody>
+            <simple>${exchangeProperty.body}</simple>
+          </setBody>
+
+          <setProperty name="messageId">
+            <jsonpath suppressExceptions="true">$.message.id</jsonpath>
+          </setProperty>
+
+          <!-- get token -->
+          <to uri="direct:efr-trace"/>
+          
+          <log message="Response for ${exchangeProperty.messageId}: ${header.CamelHttpResponseCode}" loggingLevel="INFO"  />
+        </step>
+     </route>
+
+</routes>

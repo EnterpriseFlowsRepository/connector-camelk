@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: efr-apitraces
+  annotations:
+    kubernetes.io/ingress.class: addon-http-application-routing
+#    kubernetes.io/ingress.class: azure/application-gateway
+    # Whitelist: APIMGNT-PROD,APIMGNT-REC,LESNE,BRESCHER
+    nginx.ingress.kubernetes.io/whitelist-source-range: 51.103.60.79,51.103.51.65,82.64.134.79,83.205.231.191
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /traces/1
+        pathType: Prefix
+        backend:
+          service: 
+            name: efr-apitraces
+            port: 
+              number: 80
+  
+  

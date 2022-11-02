@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- camel-k: language=xml -->
+<!-- camel-k: dependency=camel-quarkus-openapi-java dependency=mvn:xalan:xalan:2.7.1 -->
+<!-- camel-k: dependency=camel-azure-servicebus -->
+<!-- camel-k: dependency=camel-quarkus-opentelemetry dependency=mvn:io.quarkus:quarkus-opentelemetry-exporter-otlp -->
+
+<routes xmlns="http://camel.apache.org/schema/spring">
+  
+      <!-- appel depuis /annonces -->
+      <route id="efr-addTrace" trace="{{efr-addTrace.trace}}">
+
+        <!-- appel depuis POST /traces (= publishEvenement) du fichier OpenAPI -->
+        <from uri="direct:addTrace" />
+        
+        <onException useOriginalMessage="false">
+          <exception>java.lang.Exception</exception>
+          <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
+          <log message="history: ${messageHistory}" loggingLevel="ERROR"/>
+          <toD uri="{{messaging.exceptions.exception}}" />
+
+          <!-- return HTTP response -->
+          <setHeader name="CamelHttpResponseCode">
+            <constant>500</constant>
+          </setHeader>
+        </onException>
+
+        <step id="init">
+
+          <log message="New trace."  />
+
+        </step>
+
+        <step id="publish-message">
+          <setHeader name="CamelAzureServiceBusContentType">
+            <constant>application/json</constant>
+          </setHeader>
+          <setHeader name="CorrelationId">
+            <simple>${headers['correlation-id']}</simple>
+          </setHeader>
+          <setHeader name="ContentType">
+            <simple>${headers['Content-Type']}</simple>
+          </setHeader>
+          
+          <!-- pub event -->
+          <toD uri="{{messaging.queue.traces-traces}}" />
+
+        </step>
+
+        <step id="response">
+          <setBody><constant/></setBody>
+          <setHeader name="CamelHttpResponseCode">
+            <constant>201</constant>
+          </setHeader>
+        </step>
+     </route>
+
+
+</routes>

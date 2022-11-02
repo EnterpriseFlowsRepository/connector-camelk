@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- camel-k: language=xml -->
+
+<routes xmlns="http://camel.apache.org/schema/spring">
+
+    <!-- lecture du détail d'un bien -->
+    <route id="getTable">
+        <from uri="direct:transcodifications-getTable" />
+
+        <!-- etape de trace -->
+        <setProperty name="step">
+          <simple>Get table: ${exchangeProperty.idTable}</simple>
+        </setProperty>
+
+        <log message="getTable" loggingLevel="DEBUG"/>
+        <setBody><constant></constant></setBody>
+
+        <removeHeaders pattern="*"/>
+        <setHeader name="Exchange.CONTENT_TYPE">
+          <constant>application/json</constant>
+        </setHeader>
+        <setHeader name="Ocp-Apim-Subscription-Key">
+          <constant>{{api.apikey}}</constant>
+        </setHeader>
+        <setHeader name="CamelHttpMethod">
+          <constant>GET</constant>
+        </setHeader>
+        <setHeader name="correlation-id">
+          <simple>${exchangeProperty['correlation-id']}</simple>
+        </setHeader>
+
+        <toD uri="https://{{api.biens}}/biens/${exchangeProperty.idBien}"/>
+      </route>
+
+</routes>

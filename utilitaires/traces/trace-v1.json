@@ -1,0 +1,26 @@
+{
+    "environment": "${properties:environment}",
+    "state": "${exchangeProperty.status}",
+    "message": {
+      "created": "${date:now:yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
+      "correlationId": "${headers.correlation-id}",
+      "id": "${id}",
+      "headers": ${exchangeProperty.headers},
+      "type": "${exchangeProperty.type}",
+      "level": "${exchangeProperty.level}",
+      "body": "${exchangeProperty.body}"
+    },
+    "route": {
+      "name": "${properties:route.name}",
+      "version": "${properties:route.version}",
+      "id": "${properties:route.name}",
+      "step": "${exchangeProperty.step}",
+      "description": "${exchangeProperty.description}"
+    },
+    "business": ${exchangeProperty.business},
+    "infrastructure": {
+      "instance": "${properties:quarkus.application.name}",
+      "hostname": "${hostname}",
+      "datacenter": "${properties:route.datacenter}"
+    }
+  }

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- camel-k: language=xml -->
+<!-- camel-k: resource=file:./trace-v1.json -->
+<!-- camel-k: dependency=camel-azure-servicebus -->
+
+<routes xmlns="http://camel.apache.org/schema/spring">
+
+      <!-- Gère une exception d'une route -->
+      <route id="traces" messageHistory="true">
+        <from uri="seda:traces" />
+
+        <!-- on exeception, create a message on exceptions.exception -->
+        <onException useOriginalMessage="false">
+          <exception>java.lang.Exception</exception>
+          <handled><constant>true</constant></handled>
+          <setProperty name="routeId">
+            <simple>$routeId</simple>
+          </setProperty>
+          <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
+          <log message="history: ${messageHistory}" loggingLevel="WARN"/>
+          <toD uri="{{messaging.exceptions.exception}}" />
+        </onException>
+
+        <!-- Transform context to JSON properties: body, headers and business -->
+        <process ref="prepareJsonTrace"/>
+
+       <setBody>
+        <simple>resource:classpath:trace-v1.json</simple>
+       </setBody>
+
+       <log message="Trace for: ${id} in ${headers['correlation-id']}" loggingLevel="INFO"/>
+       <!-- publish trace -->
+       <toD uri="{{messaging.queue.traces-traces}}" />
+    </route>
+
+</routes>

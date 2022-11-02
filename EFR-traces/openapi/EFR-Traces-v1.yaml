@@ -1,0 +1,841 @@
+openapi: 3.0.2
+info:
+    title: Enterprise Flows Repository - Traces
+    version: 1.4.1
+    description: |-
+        Manage Traces for Enterprise Flows Repository.
+
+        Concepts manged by this API:
+        * trace,
+        * mediation,
+        * flow,
+        * exchange.
+
+        Only trace can be post.
+        Others data are RUN informations.
+    contact:
+        name: Emmanuel LESNE
+        url: 'https://www.enterpriseflowsrepository.com'
+        email: emmanuel.lesne@enterpriseflowsrepository.com
+paths:
+    /traces:
+        summary: Path used to manage the list of traces.
+        description: >-
+            The REST endpoint/path used to list and create zero or more `Trace` entities.  This path contains
+            a `GET` and `POST` operation to perform the list and create tasks, respectively.
+        get:
+            tags:
+                - Traces
+            parameters:
+                -
+                    name: after
+                    description: Trace after
+                    schema:
+                        format: date-time
+                        type: string
+                    in: query
+                -
+                    name: before
+                    description: Trace before datetime.
+                    schema:
+                        format: date-time
+                        type: string
+                    in: query
+                -
+                    name: keys
+                    description: Array of business key names.
+                    schema:
+                        type: array
+                        items:
+                            type: string
+                    in: query
+                -
+                    name: limit
+                    description: nb of maximum elements per page.
+                    schema:
+                        type: integer
+                    in: query
+                -
+                    name: page
+                    description: Number of page. Start from 1.
+                    schema:
+                        type: integer
+                    in: query
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Trace'
+                            examples:
+                                traces:
+                                    value:
+                                        -
+                                            version: '1'
+                                            environnement: PROD
+                                            state: error
+                                            message:
+                                                created: '2019-10-30T12:30:04.123+01:00'
+                                                CorrelationID: 132-abc-456-def
+                                                MessageID: abc-123
+                                                headers:
+                                                    -
+                                                        name: HEADER1
+                                                        value: 1234EFG
+                                                    -
+                                                        name: HEADER2
+                                                        value: 1234EFG
+                                                type: business|tecnical
+                                                level: debug|info|warn|error
+                                                body: ...
+                                            route:
+                                                name: RouteCamel ABC
+                                                version: 1.2.2
+                                                id: Camel-ABC-456789
+                                                step: Input from file abc.txt
+                                                description: textual description
+                                            business:
+                                                -
+                                                    value: ABCD
+                                                    name: Invoice
+                                                -
+                                                    value: DFEG
+                                                    name: Invoice
+                                            exception:
+                                                code: Parsing-123
+                                                class: XsltException
+                                                detail: ...
+                                                stacktrace: ...
+                                            infrastructure:
+                                                instance: processABC
+                                                hostname: serverName2
+                                                datacenter: paris
+                                        -
+                                            version: '1'
+                                            environnement: PROD
+                                            state: success
+                                            message:
+                                                created: '2019-10-30T12:30:04.123+01:00'
+                                                CorrelationID: 132-abc-456-def
+                                                MessageID: abc-123
+                                                headers:
+                                                    -
+                                                        name: HEADER1
+                                                        value: 1234EFG
+                                                    -
+                                                        name: HEADER2
+                                                        value: 1234EFG
+                                                type: business|technical
+                                                level: debug|info|warn|error
+                                                body: ...
+                                            route:
+                                                name: RouteCamel ABC
+                                                version: 1.2.2
+                                                id: Camel-ABC-456789
+                                                step: Input from file abc.txt
+                                                description: textual description
+                                            business:
+                                                -
+                                                    value: ABCD
+                                                    name: Invoice
+                                                -
+                                                    value: DFEG
+                                                    name: Invoice
+                                            infrastructure:
+                                                instance: processABC
+                                                hostname: serverName2
+                                                datacenter: paris
+                    description: Successful response - returns an array of `Trace` entities.
+                '404':
+                    description: No Traces found.
+                '500':
+                    $ref: '#/components/responses/Error'
+            operationId: listTraces
+            description: Gets a list of all `Trace` entities.
+        put:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                $ref: '#/components/schemas/Trace'
+                required: true
+            tags:
+                - Traces
+            responses:
+                '202':
+                    description: |-
+                        Traces validated, accepted but inserted yet.
+                        Asynchronous insertion.
+                '500':
+                    $ref: '#/components/responses/Error'
+            operationId: bulkTraces
+            description: Bulk usage for put some traces.
+        post:
+            requestBody:
+                description: A new `Trace` to be created.
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Trace'
+                required: true
+            tags:
+                - Traces
+            responses:
+                '201':
+                    description: Successful response.
+                '500':
+                    $ref: '#/components/responses/Error'
+            operationId: addTrace
+            description: Creates a new instance of a `Trace`.
+components:
+    schemas:
+        Source:
+            title: Root Type for Source
+            description: source for Input or Output.
+            type: object
+            properties:
+                protocol:
+                    description: Name of protocol.
+                    enum:
+                        - file
+                        - queue
+                        - http
+                        - stream
+                    type: string
+                source:
+                    description: Name of source. Text free.
+                    type: string
+            example:
+                protocol: file
+                source: fileName.txt
+        Route:
+            title: Root Type for Route
+            description: Route used by the message.
+            type: object
+            properties:
+                name:
+                    description: Name of route.
+                    type: string
+                version:
+                    description: Version of route.
+                    type: string
+                id:
+                    description: ID of route.
+                    type: string
+                step:
+                    description: Step DURIG thie route.
+                    type: string
+                description:
+                    description: Textual description of route.
+                    type: string
+            example:
+                name: RouteCamel ABC
+                version: 1.2.2
+                id: Camel-ABC-456789
+                step: Input from file abc.txt
+                description: textual description
+        Exception:
+            title: Root Type for Exception
+            description: Exception occurs during transport.
+            required:
+                - code
+            type: object
+            properties:
+                code:
+                    description: Unique code for this exception.
+                    type: string
+                class:
+                    description: Class name.
+                    type: string
+                detail:
+                    description: A short text details.
+                    type: string
+                stacktrace:
+                    description: complete stacktrace of this exception.
+                    type: string
+                when:
+                    format: date-time
+                    description: Date when occurs.
+                    type: string
+            example:
+                code: Parsing-123
+                class: javax.xml.XsltException
+                detail: Juste a line
+                stacktrace: |-
+                    Multi lines 
+                     lines 
+                     etc.
+        Infrastructure:
+            title: Root Type for Infrastructure
+            description: Infrastructure where transport is executed.
+            required:
+                - instance
+            type: object
+            properties:
+                hostname:
+                    description: host of server.
+                    type: string
+                datacenter:
+                    description: Name of DataCenter.
+                    type: string
+                instance:
+                    description: Name of process or runable.
+                    type: string
+            example:
+                instance: talendesb
+                hostname: server1
+                datacenter: DC1
+        Error:
+            title: Root Type for Error
+            description: Generic error.
+            type: object
+            properties:
+                code:
+                    description: 'Code of this error: AAAA-0000'
+                    type: string
+                description:
+                    description: Textual description.
+                    type: string
+                details:
+                    description: Complete stacktrace or long text to technical details.
+                    type: string
+                origin:
+                    description: EL path of this error.
+                    type: string
+            example:
+                code: INFRA-123
+                description: attribute ABC is not acceptable.
+                details: |
+                    bla bla 
+                     bla bla 
+                     bla bla 
+                origin: server.1.tag.2.name
+        Message:
+            title: Root Type for Message
+            description: Message description.
+            required:
+                - level
+                - id
+                - type
+            type: object
+            properties:
+                created:
+                    format: date-time
+                    description: Date of message creation.
+                    type: string
+                headers:
+                    description: Headers of this message.
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Key'
+                type:
+                    description: |-
+                        Type of this trace.
+                        Examples: technical, business.
+                    type: string
+                level:
+                    description: |-
+                        Level of this trace.
+                        Examples: debug, info, warn, error
+                    type: string
+                body:
+                    description: Body of message.
+                    type: string
+                id:
+                    description: ID unique of this message.
+                    type: string
+                correlationId:
+                    description: |-
+                        ID share during some message.
+                        ID of a travel between Application Source to Application Target.
+                    type: string
+            example:
+                created: '2019-10-30T12:30:04.123+01:00'
+                correlationID: 132-abc-456-def
+                messageID: abc-123
+                headers:
+                    -
+                        name: HEADER1
+                        value: 1234EFG
+                    -
+                        name: HEADER2
+                        value: 1234EFG
+                type: business
+                level: error
+                body: ...
+        Data:
+            title: Root Type for Data
+            description: ''
+            type: object
+            properties:
+                name:
+                    type: string
+                value:
+                    type: string
+            example:
+                name: Invoice
+                value: ABC
+        Trace:
+            title: Root Type for Trace
+            description: Trace of a message.
+            required:
+                - route
+                - message
+                - environment
+            type: object
+            properties:
+                message:
+                    $ref: '#/components/schemas/Message'
+                    description: Technical description of message.
+                    properties:
+                        created:
+                            format: date-time
+                            type: string
+                        CorrelationID:
+                            type: string
+                        MessageID:
+                            type: string
+                        headers:
+                            type: array
+                            items:
+                                type: object
+                                properties:
+                                    name:
+                                        type: string
+                                    value:
+                                        type: string
+                        type:
+                            type: string
+                        level:
+                            type: string
+                        body:
+                            type: string
+                route:
+                    $ref: '#/components/schemas/Route'
+                    description: Route used by message.
+                    properties:
+                        name:
+                            type: string
+                        version:
+                            type: string
+                        id:
+                            type: string
+                        step:
+                            type: string
+                        description:
+                            type: string
+                        input:
+                            type: object
+                            properties:
+                                protocol:
+                                    type: string
+                                source:
+                                    type: string
+                business:
+                    description: Business keys in this message.
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Data'
+                exception:
+                    $ref: '#/components/schemas/Exception'
+                    description: Exception occurs ?
+                    properties:
+                        code:
+                            type: string
+                        class:
+                            type: string
+                        detail:
+                            type: string
+                        stacktrace:
+                            type: string
+                infrastructure:
+                    $ref: '#/components/schemas/Infrastructure'
+                    description: Infra where route is executed.
+                    properties:
+                        hostname:
+                            type: string
+                environment:
+                    description: Name of environement.
+                    type: string
+                state:
+                    description: |-
+                        State of trace: Success, Failed, Warning, etc.
+
+                        If empty, it is calculated with exception.
+                    type: string
+            example:
+                version: '1'
+                environnement: PROD
+                state: success
+                message:
+                    created: '2019-10-30T12:30:04.123+01:00'
+                    CorrelationID: 132-abc-456-def
+                    MessageID: abc-123
+                    headers:
+                        -
+                            name: HEADER1
+                            value: 1234EFG
+                        -
+                            name: HEADER2
+                            value: 1234EFG
+                    type: error|business|technical
+                    level: debug|info|warn|error
+                    body: ...
+                route:
+                    name: RouteCamel ABC
+                    version: 1.2.2
+                    id: Camel-ABC-456789
+                    step: Input from file abc.txt
+                    description: textual description
+                business:
+                    -
+                        value: ABCD
+                        name: Invoice
+                    -
+                        value: DFEG
+                        name: Invoice
+                exception:
+                    code: Parsing-123
+                    class: XsltException
+                    detail: ...
+                    stacktrace: ...
+                infrastructure:
+                    instance: processABC
+                    hostname: serverName2
+                    datacenter: paris
+        Element:
+            title: Root Type for Element
+            description: Reference to a resource.
+            type: object
+            properties:
+                id:
+                    type: string
+                link:
+                    type: string
+                type:
+                    type: string
+                name:
+                    description: Name of element.
+                    type: string
+            example:
+                id: abc-123-defg-456
+                type: Flow
+                link: /traces/1/Flows/abc-123-defg-456
+                name: Flow trace of ...
+        Key:
+            title: Root Type for Key
+            description: ''
+            type: object
+            properties:
+                name:
+                    type: string
+                value:
+                    type: string
+            example:
+                name: VARIABLE
+                value: en cours de manipulation
+        FlowTrace:
+            title: Root Type for Mediation
+            description: Trace detected of a mediation.
+            required:
+                - id
+                - start
+            type: object
+            properties:
+                id:
+                    description: Unique ID of trace.
+                    type: string
+                definition:
+                    description: |-
+                        Mediation Key.
+                        cf. API Mediations.
+                    type: string
+                start:
+                    format: date-time
+                    description: Date when started.
+                    type: string
+                end:
+                    format: date-time
+                    description: Date when ended.
+                    type: string
+                origins:
+                    description: List of Applications names origins.
+                    type: array
+                    items:
+                        type: string
+                targets:
+                    description: List of applications names targets.
+                    type: array
+                    items:
+                        type: string
+                state:
+                    description: state of mediation.
+                    type: string
+                datas:
+                    description: List of data moved.
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Data'
+                correlationsId:
+                    description: |-
+                        unique ID of transport.
+                        Multiple is possible.
+                    type: array
+                    items:
+                        type: string
+                exchangeId:
+                    description: ID of exchange
+                    type: string
+                reference:
+                    description: Name in Referential.
+                    type: string
+                substate:
+                    description: A sub state for more precision.
+                    type: string
+            example:
+                id: abc-124-dbh-345
+                definition: /api/mediations/1/flows/Flow-ABC
+                reference: Flow-ABC
+                exchangeId: abc-646-dhjk-4775
+                start: '2021-04-12T12:00:00.123+01:00'
+                end: '2021-04-12T12:00:00.123+01:00'
+                origins:
+                    - ESB
+                targets:
+                    - SAP
+                    - DB
+                state: Failure
+                datas:
+                    -
+                        name: Invoice
+                        value: ABC
+                correlationsId:
+                    - abdc-1234-defg-2343
+        MediationTrace:
+            title: Root Type for Mediation
+            description: Trace detected of a mediation.
+            required:
+                - id
+                - start
+            type: object
+            properties:
+                id:
+                    description: Unique ID of trace.
+                    type: string
+                definition:
+                    description: |-
+                        Mediation Key.
+                        cf. API Mediations.
+                    type: string
+                start:
+                    format: date-time
+                    description: Date when started.
+                    type: string
+                end:
+                    format: date-time
+                    description: Date when ended.
+                    type: string
+                state:
+                    description: state of mediation.
+                    type: string
+                datas:
+                    description: List of `Data` moved.
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Data'
+                correlationsId:
+                    description: |-
+                        unique ID of transport.
+                        Multiple is possible.
+                    type: array
+                    items:
+                        type: string
+                flowId:
+                    description: ID of flow.
+                    type: string
+                reference:
+                    description: Name in Referential.
+                    type: string
+                version:
+                    description: Version of mediation.
+                    type: string
+            example:
+                id: abc-124-dbh-345
+                definition: /api/mediations/1/mediations/Mediation-ABC
+                reference: Mediation-ABC
+                version: 1.0.0
+                flowId: dbft-1543-fhjk-374
+                start: '2021-04-12T12:00:00.123+01:00'
+                end: '2021-04-12T12:00:00.123+01:00'
+                state: Failure
+                datas:
+                    -
+                        name: Invoice
+                        value: ABC
+                correlationsId:
+                    - abdc-1234-defg-2343
+        Information:
+            title: Root Type for Data
+            description: ''
+            type: object
+            properties:
+                name:
+                    type: string
+                value:
+                    type: string
+            example:
+                name: Invoice
+                value: ABC
+        Statistic:
+            title: Root Type for Statistic
+            description: A statistic of usage.
+            required:
+                - other
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                success:
+                    type: integer
+                warning:
+                    type: integer
+                error:
+                    type: integer
+                other:
+                    description: other states
+                    type: integer
+            example:
+                id: ABC
+                name: Flow ABC
+                success: 50
+                warning: 5
+                error: 2
+        ExchangeTrace:
+            title: Root Type for Exchange
+            description: Trace of an exchange.
+            required:
+                - id
+                - start
+                - state
+            type: object
+            properties:
+                id:
+                    description: Unique ID
+                    type: string
+                definition:
+                    description: |-
+                        Definition Key.
+                        cf. API Business.
+                    type: string
+                start:
+                    format: date-time
+                    description: Date when started.
+                    type: string
+                state:
+                    description: State of exchange.
+                    type: string
+                origins:
+                    description: List of SYSTEMS origins.
+                    type: array
+                    items:
+                        type: string
+                targets:
+                    description: List of SYSTEMS targets.
+                    type: array
+                    items:
+                        type: string
+                correlationsId:
+                    description: List of correlations ID knowned.
+                    type: array
+                    items:
+                        type: string
+                end:
+                    format: date-time
+                    description: Date when finished.
+                    type: string
+                reference:
+                    description: Name in Referential.
+                    type: string
+                informations:
+                    description: List of data moved.
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Information'
+                substate:
+                    description: A sub state for more precision.
+                    type: string
+            example:
+                id: 1234578abc
+                definition: /api/business/exchanges/Exchange-ABC
+                reference: Exchange-ABC
+                start: '2021-11-24T14:45:00.123+01:00'
+                end: '2021-11-24T15:00:00.123+01:00'
+                datas:
+                    -
+                        name: Invoice
+                        value: ABC
+                state: Success
+                origins:
+                    - SAP
+                targets:
+                    - GMAO
+                    - App2
+                correlationsId:
+                    - 1234-abcd-2345-2812
+    responses:
+        Error:
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/Error'
+                    examples:
+                        sample error:
+                            value:
+                                code: INFRA-123
+                                description: attribute ABC is not acceptable.
+                                details: |
+                                    bla bla 
+                                     bla bla 
+                                     bla bla 
+                                origin: server.1.tag.2.name
+            description: Error during request management.
+        NewElement:
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/Element'
+                    examples:
+                        element:
+                            value:
+                                id: ABC
+                                class: Exchange
+                                link: /traces/1/exchanges/ABC
+            description: ''
+tags:
+    -
+        name: Traces
+        description: Trace of a message transport.
+    -
+        name: ExchangeTraces
+        description: ''
+    -
+        name: MediationTraces
+        description: ''
+    -
+        name: FlowTraces
+        description: ''
+    -
+        name: Exceptions
+        description: ''
+    -
+        name: Searchs
+        description: ''
+    -
+        name: Statistics
+        description: ''
