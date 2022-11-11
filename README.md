@@ -3,15 +3,21 @@
 Connector between CamelK and EFR.
 Routes and java code to use easyless EFR.  
 
-# Add submodule
+# Clone project
 
 Add this project as a submodule of your project.
 
 ```
-git submodule add git@github.com:EnterpriseFlowsRepository/connector-camelk.git
+git clone git@github.com:EnterpriseFlowsRepository/connector-camelk.git
 ```
 
+## Use Sample as a project sample 
+
+
 # Configuration
+
+Copy config/DEMO/run.properties as a new ENVIRONMENT file into config/ENVIRONMENT/run.properties.
+
 
 ## For Azure
 
