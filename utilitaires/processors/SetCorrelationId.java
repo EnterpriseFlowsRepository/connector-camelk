@@ -31,11 +31,10 @@ public class SetCorrelationId extends RouteBuilder {
             // Retreive Quarkus config
             private Config config = ConfigProvider.getConfig();
 
-            private String PROP_BUSINESS = "traces.business";
-
             private String AzureCorrelationId = "correlation-id";
-            private String AzureProperties = "CamelAzureServiceBusApplicationProperties";
-
+            private String CorrelationId = "CorrelationId";
+            private String AzSBCorrelationId = "CamelAzureServiceBusApplicationProperties";
+            
             /**
              * Put properties to sources property.
              * 
@@ -45,32 +44,70 @@ public class SetCorrelationId extends RouteBuilder {
                 
                 // 1. Read all headers to generate an array
                 Map<String, Object> map = null;
-                String correlationId = exchange.getProperty(AzureCorrelationId, String.class);
+                String azCorrelationId = exchange.getProperty(AzureCorrelationId, String.class);
+                String correlationId = exchange.getProperty(CorrelationId, String.class);
 
-                for (String key: exchange.getIn().getHeaders().keySet()) {
-                    try {
-                        
-                        if (key.equals(AzureProperties)) {
-                            map = exchange.getIn().getHeader(key, Map.class);
-                        }
+                // null in properties ?
+                if ((azCorrelationId == null) || azCorrelationId.equals("")) {
+                    azCorrelationId = exchange.getIn().getHeader(AzureCorrelationId, String.class);
+                    correlationId = azCorrelationId;
 
-                        if (key.equals(AzureCorrelationId)) {
-                            correlationId = exchange.getIn().getHeader(key, String.class);
-                        }
-                        
-                    } catch (Exception e) {
-                        LOG.error("erreur sur "+key+": "+e.getMessage());
+                    LOG.debug("Correlation ID from property "+AzureCorrelationId+"="+azCorrelationId);
+                }
+
+                // null in properties ?
+                if ((correlationId == null) || correlationId.equals("")) {
+                    correlationId = exchange.getIn().getHeader(CorrelationId, String.class);
+                    azCorrelationId = correlationId;
+
+                    LOG.debug("Correlation ID from property "+CorrelationId+"="+correlationId);
+                }
+
+                // Get from ServiceBus
+                Map props = exchange.getIn().getHeader(AzSBCorrelationId, Map.class);
+                if (props == null) {
+                    props = new HashMap<String, String>();
+                    exchange.getIn().setHeader(AzSBCorrelationId, props);
+                } else {
+                    LOG.debug(AzSBCorrelationId+"="+props);
+
+                    if (props.containsKey(AzureCorrelationId)) {
+                        azCorrelationId = (String)props.get(AzureCorrelationId);
+                        correlationId = azCorrelationId;
+
+                        LOG.debug("Correlation ID from property "+AzSBCorrelationId+"="+correlationId);
+                    }
+
+                    if (props.containsKey(CorrelationId)) {
+                        azCorrelationId = (String)props.get(CorrelationId);
+                        correlationId = azCorrelationId;
+
+                        LOG.debug("Correlation ID from property "+AzSBCorrelationId+"="+correlationId);
                     }
                 }
 
-                if (map == null) {
-                    map = new HashMap<String, Object>();
-                    exchange.getIn().setHeader(AzureProperties, map);
+
+                // null in headers and property, generate a new one
+                if ((correlationId == null) || (azCorrelationId == null)) {
+                    azCorrelationId = java.util.UUID.randomUUID().toString();
+                    correlationId = azCorrelationId;
+
+                    LOG.debug("Correlation ID created ="+correlationId);
                 }
 
-                if ((map != null) && (correlationId != null))
-                    map.put(AzureCorrelationId, correlationId);
+                // Set Azure Correlation ID
+                exchange.setProperty(AzureCorrelationId, azCorrelationId);
+                exchange.getIn().setHeader(AzureCorrelationId, azCorrelationId);
 
+                // Set classic Correlation ID
+                exchange.setProperty(CorrelationId, correlationId);
+                exchange.getIn().setHeader(CorrelationId, correlationId);
+
+                // Put into ServiceBus
+                props.put(AzureCorrelationId, azCorrelationId);
+                props.put(CorrelationId, correlationId);
+
+                exchange.getIn().setHeader("CamelAzureServiceBusCorrelationId", azCorrelationId);
             }
         };
 

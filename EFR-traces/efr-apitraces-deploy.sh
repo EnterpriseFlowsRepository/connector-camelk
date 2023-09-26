@@ -15,6 +15,8 @@ routes/efr-addTrace.xml  \
 --build-property file:config/build.properties \
 --open-api file:openapi/EFR-Traces-v1.yaml \
 --label mediation=$MEDIATION --label version=$VERSION \
+-t toleration.enabled=true \
+--trait toleration.taints="kubernetes.azure.com/scalesetpriority=spot:NoSchedule" \
 --wait
 
 kubectl delete hpa/$MEDIATION

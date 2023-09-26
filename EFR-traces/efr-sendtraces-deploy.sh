@@ -14,6 +14,8 @@ routes/efr-sendtraces.xml  \
 -t logging.level=INFO \
 --build-property file:config/build.properties \
 --label mediation=$MEDIATION --label version=$VERSION \
+-t toleration.enabled=true \
+-t toleration.taints="kubernetes.azure.com/scalesetpriority=spot:NoSchedule" \
 --wait
 
 kubectl delete hpa/$MEDIATION

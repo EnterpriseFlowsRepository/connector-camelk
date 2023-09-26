@@ -2,7 +2,6 @@
 <!-- camel-k: language=xml -->
 <!-- camel-k: dependency=camel-quarkus-openapi-java dependency=mvn:xalan:xalan:2.7.1 -->
 <!-- camel-k: dependency=camel-azure-servicebus -->
-<!-- camel-k: dependency=camel-quarkus-opentelemetry dependency=mvn:io.quarkus:quarkus-opentelemetry-exporter-otlp -->
 
 <routes xmlns="http://camel.apache.org/schema/spring">
   

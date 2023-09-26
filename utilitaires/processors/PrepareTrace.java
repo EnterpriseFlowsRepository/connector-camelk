@@ -33,6 +33,7 @@ public class PrepareTrace extends RouteBuilder {
             private Config config = ConfigProvider.getConfig();
 
             private String PROP_BUSINESS = "traces.business";
+            private String PROP_BUSINESS_ASIS = "traces.business.asis";
 
             private int STACK_MAX_SIZE = 1000;
             private int BODY_MAX_SIZE = 200000; // 200Ko
@@ -59,7 +60,7 @@ public class PrepareTrace extends RouteBuilder {
                         headers += ",{ \"name\": \""+key+"\", \"value\": \""+value+"\" }";
                         
                     } catch (Exception e) {
-                        LOG.error("erreur sur "+key+": "+e.getMessage());
+                        LOG.warn("erreur sur "+key+": "+e.getMessage());
                     }
                 }
 
@@ -68,111 +69,157 @@ public class PrepareTrace extends RouteBuilder {
                 exchange.setProperty("headers", headers);
 
                 // 2. Convert body for json
-                String body = StringEscapeUtils.escapeJson(
-                    exchange.getIn().getBody(String.class)
-                );
+                String body = "";
+                
+                try {
+                    body = StringEscapeUtils.escapeJson(
+                        exchange.getIn().getBody(String.class)
+                    );
+                } catch (Exception e) {
+                    LOG.warn("erreur le parsing du Body. "+e.getMessage());
+                }
 
                 // Too big ?
                 if ((body != null) && (body.length()>BODY_MAX_SIZE)) {
                     body = body.substring(0, BODY_MAX_SIZE-3)+"...";
                 }
 
-                // 3. Read all properties to generate an array
-                String business = config.getValue(PROP_BUSINESS, String.class);
-                String businessArray = "";
+                String businessArray = "[]";
 
-                if ((business != null) && (business.length()>0)) {
+                try {
+                    // 3. Read all properties to generate an array
+                    String business = config.getValue(PROP_BUSINESS, String.class);
 
-                    String businessJson = "";
+                    if ((business != null) && (business.length()>0)) {
 
-                    // Process each ref 
-                    for (String businessRef: business.split(",")) {
-                        String[] businessElement = businessRef.split("=") ;
+                        String businessJson = "";
 
-                        
-                        try {
-                            String key = businessElement[0];
-                            String valueRef = businessElement[1];
-                            String value = StringEscapeUtils.escapeJson(exchange.getProperty(valueRef, String.class));
+                        // Process each ref 
+                        for (String businessRef: business.split(",")) {
+                            String[] businessElement = businessRef.split("=") ;
+
+                            
+                            try {
+                                String key = businessElement[0];
+                                String valueRef = businessElement[1];
+                                String value = StringEscapeUtils.escapeJson(exchange.getProperty(valueRef, String.class));
                                 
-                            if (value != null) {
-                                businessJson += ",{ \"name\": \""+key+"\", \"value\": \""+value+"\" }";
-                            } else {
-                                LOG.info("No value for "+key);
-                            }
+                                if (value == null) {
+                                    value = StringEscapeUtils.escapeJson(exchange.getIn().getHeader(valueRef, String.class));
+                                }
+                                if ((value == null) && (exchange.getOut() != null)) {
+                                    value = StringEscapeUtils.escapeJson(exchange.getOut().getHeader(valueRef, String.class));
+                                }
 
-                        } catch (Exception e) {
-                            LOG.error("error on "+businessRef+": "+e.getMessage());
+                                if (value != null) {
+                                    businessJson += ",{ \"name\": \""+key+"\", \"value\": \""+value+"\" }";
+                                } else {
+                                    LOG.debug("No value for "+key+" on "+valueRef);
+                                }
+
+                            } catch (Exception e) {
+                                LOG.warn("error on "+businessRef+": "+e.getMessage());
+                            }
+                        }
+                        
+                        // produce an array of values
+                        if (businessJson.length()>0) {
+                            businessArray = "[ "+businessJson.substring(1) +" ]";
+                        } else {
+                            businessArray = "[]";
                         }
                     }
-                    
-                    // produce an array of values
-                    if (businessJson.length()>0) {
-                        businessArray = "[ "+businessJson.substring(1) +" ]";
-                    } else {
-                        businessArray = "[]";
-                    }
+                } catch (Exception e) {
+                    LOG.info("Add property=value in "+PROP_BUSINESS+" to use keys.");
                 }
 
-                // 5. Exception strace
-                if (exchange.getProperty(Exchange.EXCEPTION_CAUGHT) != null) {
-                    Exception exception = (Exception) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
+                try {
+                    // properties business push as is without modification.
+                    Boolean businessAsIs = config.getValue(PROP_BUSINESS_ASIS, Boolean.class);
+                    String valueAsIs = exchange.getProperty(PROP_BUSINESS, String.class);
+                    if (businessAsIs != null)
+                        if ((businessAsIs) && (valueAsIs != null))
+                            businessArray = valueAsIs;
+                } catch (Exception e) {
+                    LOG.info("Add property "+PROP_BUSINESS_ASIS+" to force value.");
+                }
+                    
+                try {
+                    // Format message to JSON
+                    if (exchange.getProperty("exception-message") != null)
+                        exchange.setProperty("exception-message", 
+                            StringEscapeUtils.escapeJson(
+                                exchange.getProperty("exception-message", String.class)
+                                )
+                            );
 
-                    LOG.info("Exception found: "+exception.getMessage());
+                    // 5. Exception strace
+                    if (exchange.getProperty(Exchange.EXCEPTION_CAUGHT) != null) {
+                        Exception exception = (Exception) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
 
-                    String stack = ExceptionUtils.getStackTrace(exception);
-                    if (stack.length()>STACK_MAX_SIZE) {
-                        stack = stack.substring(0, STACK_MAX_SIZE-3)+"...";
-                    }
+                        LOG.info("Exception found: "+exception.getMessage());
 
-                    exchange.setProperty("exception-stacktrace", 
-                        StringEscapeUtils.escapeJson(
-                            stack
-                            )
-                        );
-
-                    String message = exception.getMessage();
-
-                    exchange.setProperty("exception-message", 
-                        StringEscapeUtils.escapeJson(
-                            message
-                            )
-                        );
-
-                    boolean codeFound = false;
-
-                    // Retreive and test with content
-                    for(String property: config.getPropertyNames()) {
-                        try {
-                            if (property.matches("traces\\.errors.*regex")) {
-                                LOG.info("Found property: "+property);
-                                String contentToTest = config.getValue(property, String.class);
-
-                                // Check regex with message
-                                if (message.matches(contentToTest)) {
-                                    
-                                    String[] parts = property.split("\\.");
-                                    // set code
-                                    exchange.setProperty("exception-code", parts[2]);
-                                    // set type
-                                    exchange.setProperty(
-                                        "type", 
-                                        config.getValue(parts[0]+"."+parts[1]+"."+parts[2]+".type", String.class)
-                                    );
-                                    codeFound = true;
-                                } else {
-                                    LOG.info("Does not match with regEx: "+contentToTest);
-                                }
-                            }
-                        } catch (Exception e) {
-                            LOG.warn("Impossible to parse "+property);
+                        String stack = ExceptionUtils.getStackTrace(exception);
+                        if (stack.length()>STACK_MAX_SIZE) {
+                            stack = stack.substring(0, STACK_MAX_SIZE-3)+"...";
                         }
-                    }
 
-                    if (codeFound == false) {
-                        LOG.warn("No error code for '"+message+"'. Add an traces.errors.CODE.regex=RegEx .");
-                    }
-                   
+                        exchange.setProperty("exception-stacktrace", 
+                            StringEscapeUtils.escapeJson(
+                                stack
+                                )
+                            );
+
+                        String message = exception.getMessage();
+
+                        exchange.setProperty("exception-message", 
+                            StringEscapeUtils.escapeJson(
+                                message
+                                )
+                            );
+
+                        boolean codeFound = false;
+
+                        // Retreive and test with content
+                        for(String property: config.getPropertyNames()) {
+                            try {
+                                if (property.matches("traces\\.errors.*regex")) {
+                                    LOG.info("Found property: "+property);
+                                    String contentToTest = config.getValue(property, String.class);
+
+                                    // Check regex with message
+                                    if (message.matches(contentToTest)) {
+                                        
+                                        String[] parts = property.split("\\.");
+                                        // set code
+                                        exchange.setProperty("exception-code", parts[2]);
+                                        // set type
+                                        exchange.setProperty(
+                                            "type", 
+                                            config.getValue(parts[0]+"."+parts[1]+"."+parts[2]+".type", String.class)
+                                        );
+                                        codeFound = true;
+                                    } else {
+                                        LOG.info("Does not match with regEx: "+contentToTest);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                LOG.warn("Impossible to parse "+property);
+                            }
+                        }
+
+                        if (codeFound == false) {
+                            LOG.warn("No error code for '"+message+"'. Add an traces.errors.CODE.regex=RegEx .");
+                        }
+
+                    } 
+                    
+                } catch (Exception e) {
+                    LOG.error("Error dur Exception process", e);
+                }
+
+                try {
+
                     List<MessageHistory> list = exchange.getProperty(Exchange.MESSAGE_HISTORY, List.class);
 
                     if ((list != null) && (!list.isEmpty())) {
@@ -199,7 +246,11 @@ public class PrepareTrace extends RouteBuilder {
                                 )
                             );
                     }   
+
+                } catch (Exception e) {
+                    LOG.error("Error dur History process", e);
                 }
+                
 
                 // end. put all into properties
 
@@ -208,6 +259,11 @@ public class PrepareTrace extends RouteBuilder {
                 exchange.setProperty("headers", headers);
                 exchange.setProperty("business", businessArray);
 
+                // Occurs during HTTP transformation
+                String status = exchange.getProperty("status", String.class);
+                if ((status == null) || (status.length()==0)) {
+                    exchange.setProperty("status", "Error");
+                }
                 //json body
                 //exchange.getIn().setBody(newBody);
 
