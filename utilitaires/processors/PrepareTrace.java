@@ -143,6 +143,13 @@ public class PrepareTrace extends RouteBuilder {
                 } catch (Exception e) {
                     LOG.info("Add property "+PROP_BUSINESS_ASIS+" to force value.");
                 }
+
+                // escape description
+                String propertyDescription = exchange.getProperty("description", String.class); 
+                if (propertyDescription != null) {
+                    propertyDescription = StringEscapeUtils.escapeJson(propertyDescription);
+                    exchange.setProperty("description", propertyDescription);
+                }
                     
                 try {
                     // Format message to JSON
