@@ -9,9 +9,7 @@ import org.eclipse.microprofile.config.*;
 public class ErrorHandler extends RouteBuilder {
 
   @Override
-  public void configure() throws Exception {
-
-  }
+  public void configure() throws Exception {}
 
   private static final Logger LOG = LoggerFactory.getLogger(ErrorHandler.class);
 
@@ -19,11 +17,9 @@ public class ErrorHandler extends RouteBuilder {
 
   @BindToRegistry
   public static DeadLetterChannelBuilder globalErrorHandler() {
-
     DeadLetterChannelBuilder deadLetterChannelBuilder = new DeadLetterChannelBuilder();
 
-    deadLetterChannelBuilder
-      .setDeadLetterUri("seda:exceptions-manageException");
+    deadLetterChannelBuilder.setDeadLetterUri("seda:exceptions-manageException");
 
     LOG.info("DeadLetterChannelBuilder :");
     LOG.info("- retry=" + config.getValue("errors.global.maximumRedeliveries", Integer.class));
@@ -38,6 +34,5 @@ public class ErrorHandler extends RouteBuilder {
       .useOriginalMessage();
 
     return deadLetterChannelBuilder;
-
   }
 }
