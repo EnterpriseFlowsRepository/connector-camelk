@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- camel-k: language=xml -->
-<!-- camel-k: resource=file:./trace-exception-v1.json -->
-<!-- camel-k: resource=file:./exception-v1.json -->
 
 <routes xmlns="http://camel.apache.org/schema/spring">
 
