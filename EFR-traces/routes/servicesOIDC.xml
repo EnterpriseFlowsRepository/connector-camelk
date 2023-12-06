@@ -56,6 +56,16 @@
           <simple>{{auth.oidc.form}}</simple>
         </setBody>
         <toD uri="{{auth.oidc.url}}"/>
+
+        <!-- Check for errors -->
+        <choice>
+          <when>
+              <simple>${header.CamelHttpResponseCode} >= 300</simple>
+              <log message="Could not authenticate to OIDC. Error ${header.CamelHttpResponseCode}: ${body}" loggingLevel="ERROR" />
+              <stop />
+          </when>
+          <otherwise />
+        </choice>
         
         <!-- exctract token to response -->
         <setProperty name="OIDC-access_token">
