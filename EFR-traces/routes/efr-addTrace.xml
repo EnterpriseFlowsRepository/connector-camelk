@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- camel-k: language=xml -->
-<!-- camel-k: dependency=camel-quarkus-openapi-java dependency=mvn:xalan:xalan:2.7.1 -->
+<!-- camel-k: dependency=mvn:xalan:xalan:2.7.1 -->
 <!-- camel-k: dependency=camel-azure-servicebus -->
 
 <routes xmlns="http://camel.apache.org/schema/spring">
@@ -25,7 +25,7 @@
 
         <step id="init">
 
-          <log message="New trace."  />
+          <log message="New trace." loggingLevel="INFO" />
 
         </step>
 
