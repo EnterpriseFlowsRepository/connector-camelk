@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- camel-k: language=xml -->
 <!-- camel-k: dependency=camel-azure-servicebus -->
+<!-- camel-k: resource=file:./trace-v1.json -->
+<!-- camel-k: resource=file:./trace-v1.nocorrelationid.json -->
 
 <routes xmlns="http://camel.apache.org/schema/spring">
 
