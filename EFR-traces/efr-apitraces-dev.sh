@@ -9,7 +9,7 @@ kamel run \
     routes/efr-addTrace.xml \
     --property openapi.enable=addTrace \
     --property file:config/$ENVIRONMENT/run.properties \
-    --property quarkus.application.name=$MEDIATION \
+    --property route.id=$MEDIATION \
     -t logging.level=INFO \
     --build-property file:config/build.properties \
     --label version=$VERSION \
