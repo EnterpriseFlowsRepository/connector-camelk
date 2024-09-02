@@ -42,7 +42,7 @@
       </choice>
       
 
-      <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']}" loggingLevel="INFO"/>
+      <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']}" loggingLevel="DEBUG"/>
       <!-- publish trace -->
       <toD uri="{{messaging.queue.traces-traces}}" />
 
