@@ -17,7 +17,7 @@
 
         <removeHeaders pattern="*"/>
         <setHeader name="Exchange.CONTENT_TYPE">
-          <constant>application/json</constant>
+          <constant>application/json; charset=utf-8</constant>
         </setHeader>
         <setHeader name="Ocp-Apim-Subscription-Key">
           <constant>{{api.apikey}}</constant>

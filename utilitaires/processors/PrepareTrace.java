@@ -130,7 +130,7 @@ public class PrepareTrace extends RouteBuilder {
                         }
                     }
                 } catch (Exception e) {
-                    LOG.info("Add property=value in "+PROP_BUSINESS+" to use keys.");
+                    LOG.debug("Add property=value in "+PROP_BUSINESS+" to use keys.");
                 }
 
                 try {
@@ -141,7 +141,7 @@ public class PrepareTrace extends RouteBuilder {
                         if ((businessAsIs) && (valueAsIs != null))
                             businessArray = valueAsIs;
                 } catch (Exception e) {
-                    LOG.info("Add property "+PROP_BUSINESS_ASIS+" to force value.");
+                    LOG.debug("Add property "+PROP_BUSINESS_ASIS+" to force value.");
                 }
 
                 // escape description
