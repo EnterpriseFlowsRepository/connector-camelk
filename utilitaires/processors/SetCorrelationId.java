@@ -20,16 +20,14 @@ public class SetCorrelationId extends RouteBuilder {
     private static final Logger LOG = LoggerFactory.getLogger(SetCorrelationId.class);
 
     @Override
-    public void configure() throws Exception {
-    }
+    public void configure() {}
 
     @BindToRegistry
     public static Processor setAzureCorrelationId() {
-
         return new Processor() {
     
             // Retreive Quarkus config
-            private Config config = ConfigProvider.getConfig();
+            private final Config config = ConfigProvider.getConfig();
 
             private String AzureCorrelationId = "correlation-id";
             private String CorrelationId = "CorrelationId";

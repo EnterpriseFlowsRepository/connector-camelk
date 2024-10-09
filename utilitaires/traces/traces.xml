@@ -4,46 +4,45 @@
 
 <routes xmlns="http://camel.apache.org/schema/spring">
 
-      <!-- Gère une exception d'une route -->
-      <route id="traces" messageHistory="true">
-        <from uri="seda:traces" />
+  <!-- Gère une exception d'une route -->
+  <route id="traces" messageHistory="true">
+    <from uri="seda:traces" />
 
-      <!-- on exeception, create a message on exceptions.exception -->
-      <onException useOriginalMessage="false">
-        <exception>java.lang.Exception</exception>
-        <handled><constant>true</constant></handled>
-        <setProperty name="routeId">
-          <simple>$routeId</simple>
-        </setProperty>
-        <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
-        <log message="history: ${messageHistory}" loggingLevel="WARN"/>
-        <toD uri="{{messaging.exceptions.exception}}" />
-      </onException>
+    <!-- on exeception, create a message on exceptions.exception -->
+    <onException useOriginalMessage="false">
+      <exception>java.lang.Exception</exception>
+      <handled><constant>true</constant></handled>
+      <setProperty name="routeId">
+        <simple>$routeId</simple>
+      </setProperty>
+      <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
+      <log message="history: ${messageHistory}" loggingLevel="WARN"/>
+      <toD uri="{{messaging.exceptions.exception}}" />
+    </onException>
 
-      <!-- Transform context to JSON properties: body, headers and business -->
-      <process ref="prepareJsonTrace"/>
+    <!-- Transform context to JSON properties: body, headers and business -->
+    <process ref="prepareJsonTrace"/>
 
-      <choice>
-        <when>
-          <!-- Message without correlation ID -->
-          <simple>${headers['correlation-id']} == "" || ${headers['correlation-id']} == null</simple>
-          <setBody>
-            <simple>resource:classpath:trace-v1.nocorrelationid.json</simple>
-          </setBody>
-        </when>
-        <otherwise>
-          <!-- Message with correlation ID -->
-          <setBody>
-            <simple>resource:classpath:trace-v1.json</simple>
-          </setBody>
-        </otherwise>
-      </choice>
-      
+    <choice>
+      <when>
+        <!-- Message without correlation ID -->
+        <simple>${headers['correlation-id']} == "" || ${headers['correlation-id']} == null</simple>
+        <setBody>
+          <simple>resource:classpath:trace-v1.nocorrelationid.json</simple>
+        </setBody>
+      </when>
+      <otherwise>
+        <!-- Message with correlation ID -->
+        <setBody>
+          <simple>resource:classpath:trace-v1.json</simple>
+        </setBody>
+      </otherwise>
+    </choice>
+  
+    <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']}" loggingLevel="DEBUG"/>
 
-      <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']}" loggingLevel="DEBUG"/>
-      <!-- publish trace -->
-      <toD uri="{{messaging.queue.traces-traces}}" />
-
-    </route>
+    <!-- publish trace -->
+    <toD uri="{{messaging.queue.traces-traces}}" />
+  </route>
 
 </routes>
