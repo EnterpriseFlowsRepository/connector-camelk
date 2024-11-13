@@ -4,38 +4,34 @@
 
 <routes xmlns="http://camel.apache.org/schema/spring">
 
-      <!-- lecture du détail d'un bien -->
-      <route id="efr-trace">
-        <from uri="direct:efr-trace" />
+  <route id="efr-trace">
+    <from uri="direct:efr-trace" />
 <!--
-        <onException useOriginalMessage="true">
-          <exception>java.lang.Exception</exception>
-          <handled><constant>false</constant></handled>
-          <setProperty name="routeId">
-            <simple>$routeId</simple>
-          </setProperty>
-          <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
-          <log message="history: ${messageHistory}" loggingLevel="WARN"/>
-          <log message="Response: ${body}" loggingLevel="ERROR"/>
-        </onException>
-      -->
-        <log message="postTrace: ${body}" loggingLevel="INFO"/>
+    <onException useOriginalMessage="true">
+      <exception>java.lang.Exception</exception>
+      <handled><constant>false</constant></handled>
+      <setProperty name="routeId">
+        <simple>$routeId</simple>
+      </setProperty>
+      <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
+      <log message="history: ${messageHistory}" loggingLevel="WARN"/>
+      <log message="Response: ${body}" loggingLevel="ERROR"/>
+    </onException>
+  -->
+    <log message="postTrace: ${body}" loggingLevel="DEBUG"/>
 
-        <removeHeaders pattern="*"/>
-        <setHeader name="Exchange.CONTENT_TYPE">
-          <constant>application/json; charset=utf-8</constant>
-        </setHeader>
-        <setHeader name="Authorization">
-          <simple>Bearer ${exchangeProperty.OIDC-access_token}</simple>
-        </setHeader>
-        <setHeader name="CamelHttpMethod">
-          <constant>POST</constant>
-        </setHeader>
+    <removeHeaders pattern="*"/>
+    <setHeader name="Exchange.CONTENT_TYPE">
+      <constant>application/json; charset=utf-8</constant>
+    </setHeader>
+    <setHeader name="Authorization">
+      <simple>Bearer ${exchangeProperty.OIDC-access_token}</simple>
+    </setHeader>
+    <setHeader name="CamelHttpMethod">
+      <constant>POST</constant>
+    </setHeader>
 
-        <toD uri="{{efr.traces.post}}"/>
+    <toD uri="{{efr.traces.post}}"/>
 
-      </route>
-
-      
-
+  </route>
 </routes>

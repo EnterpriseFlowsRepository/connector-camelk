@@ -4,8 +4,11 @@ MEDIATION=efr-sendtraces
 
 echo "Mediation $MEDIATION version $VERSION."
 
+[[ -z ${NAMESPACE+x} ]] && echo "[X][efr-traces] Variable non définie: NAMESPACE." && exit 8
+
 kamel run \
     --name $MEDIATION \
+    -n $NAMESPACE -x $NAMESPACE \
     routes/servicesEFR.xml \
     routes/servicesOIDC.xml \
     routes/efr-sendtraces.xml \
@@ -19,4 +22,4 @@ kamel run \
     --wait
 
 kubectl delete hpa/$MEDIATION
-kubectl autoscale it $MEDIATION --min=1 --max=3 --cpu-percent=80
+kubectl autoscale it $MEDIATION --min=1 --max=50 --cpu-percent=80

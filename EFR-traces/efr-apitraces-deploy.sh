@@ -3,9 +3,12 @@ echo "Déploiement vers $ENVIRONMENT."
 MEDIATION=efr-apitraces
 WHEN=$(date +%D-%R)
 
+[[ -z ${NAMESPACE+x} ]] && echo "[X][efr-traces] Variable non définie: NAMESPACE." && exit 8
+
 echo "Mediation $MEDIATION version $VERSION."
 kamel run \
     --name $MEDIATION \
+    -n $NAMESPACE -x $NAMESPACE \
     routes/OpenApiRest.java \
     routes/efr-addTrace.xml \
     --property openapi.enable=addTrace \
