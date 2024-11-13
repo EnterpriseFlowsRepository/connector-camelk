@@ -21,5 +21,5 @@ kamel run \
     --trait toleration.taints="kubernetes.azure.com/scalesetpriority=spot:NoSchedule" \
     --wait
 
-kubectl delete hpa/$MEDIATION
-kubectl autoscale it $MEDIATION --min=1 --max=3 --cpu-percent=80
+kubectl delete -n $NAMESPACE hpa/$MEDIATION
+kubectl autoscale -n $NAMESPACE it $MEDIATION --min=1 --max=3 --cpu-percent=80
