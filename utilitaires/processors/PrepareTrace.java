@@ -36,6 +36,8 @@ public class PrepareTrace extends RouteBuilder {
             private String PROP_BUSINESS_ASIS = "traces.business.asis";
 
             private int STACK_MAX_SIZE = 1000;
+
+            // since 05/12/2024 : not used
             private int BODY_MAX_SIZE = 200000; // 200Ko
 
             /**
@@ -80,9 +82,9 @@ public class PrepareTrace extends RouteBuilder {
                 }
 
                 // Too big ?
-                if ((body != null) && (body.length()>BODY_MAX_SIZE)) {
-                    body = body.substring(0, BODY_MAX_SIZE-3)+"...";
-                }
+                //if ((body != null) && (body.length()>BODY_MAX_SIZE)) {
+                //    body = body.substring(0, BODY_MAX_SIZE-3)+"...";
+                //}
 
                 String businessArray = "[]";
 
