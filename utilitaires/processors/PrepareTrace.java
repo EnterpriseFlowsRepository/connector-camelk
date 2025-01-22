@@ -4,10 +4,7 @@
 
 import org.apache.camel.*;
 import org.apache.camel.builder.RouteBuilder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -20,9 +17,10 @@ public class PrepareTrace extends RouteBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrepareTrace.class);
 
+    private static final List<String> IGNORED_HEADERS = List.of("Set-Cookie");
+
     @Override
-    public void configure() throws Exception {
-    }
+    public void configure() throws Exception {}
 
     @BindToRegistry
     public static Processor prepareJsonTrace() {
@@ -48,9 +46,12 @@ public class PrepareTrace extends RouteBuilder {
             public void process(Exchange exchange) throws Exception {
                 
                 // 1. Read all headers to generate an array
-                String headers = "";
-
+                StringJoiner headers = new StringJoiner(",");
                 for (String key: exchange.getIn().getHeaders().keySet()) {
+                    if (IGNORED_HEADERS.contains(key)) {
+                        continue;
+                    }
+
                     try {
                         String value = exchange.getIn().getHeader(key, String.class);
                         value = StringEscapeUtils.escapeJson(value);
@@ -59,20 +60,15 @@ public class PrepareTrace extends RouteBuilder {
                         if ( value == null )
                             value = "";
                             
-                        headers += ",{ \"name\": \""+key+"\", \"value\": \""+value+"\" }";
+                        headers.add("{\"name\":\""+key+"\",\"value\":\""+value+"\"}");
                         
                     } catch (Exception e) {
                         LOG.warn("erreur sur "+key+": "+e.getMessage());
                     }
                 }
 
-                // produce an array of headers
-                headers = "[ "+headers.substring(1) +" ]";
-                exchange.setProperty("headers", headers);
-
                 // 2. Convert body for json
                 String body = "";
-                
                 try {
                     body = StringEscapeUtils.escapeJson(
                         exchange.getIn().getBody(String.class)
@@ -80,14 +76,12 @@ public class PrepareTrace extends RouteBuilder {
                 } catch (Exception e) {
                     LOG.warn("erreur le parsing du Body. "+e.getMessage());
                 }
-
                 // Too big ?
                 //if ((body != null) && (body.length()>BODY_MAX_SIZE)) {
                 //    body = body.substring(0, BODY_MAX_SIZE-3)+"...";
                 //}
 
                 String businessArray = "[]";
-
                 try {
                     // 3. Read all properties to generate an array
                     String business = config.getValue(PROP_BUSINESS, String.class);
@@ -265,7 +259,7 @@ public class PrepareTrace extends RouteBuilder {
 
                 // put transformations into exchange.
                 exchange.setProperty("body", body);
-                exchange.setProperty("headers", headers);
+                exchange.setProperty("headers", "["+headers+"]");
                 exchange.setProperty("business", businessArray);
 
                 // Occurs during HTTP transformation
