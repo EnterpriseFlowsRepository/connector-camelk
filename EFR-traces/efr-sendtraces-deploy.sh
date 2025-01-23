@@ -12,6 +12,7 @@ kamel run \
     routes/servicesEFR.xml \
     routes/servicesOIDC.xml \
     routes/efr-sendtraces.xml \
+    ../utilitaires/processors/MessageAggregator.java \
     --property file:config/$ENVIRONMENT/run.properties \
     --property route.id=$MEDIATION \
     -t logging.level=INFO \
@@ -22,4 +23,4 @@ kamel run \
     --wait
 
 kubectl delete -n $NAMESPACE hpa/$MEDIATION
-kubectl autoscale -n $NAMESPACE it $MEDIATION --min=1 --max=50 --cpu-percent=80
+kubectl autoscale -n $NAMESPACE it $MEDIATION --min=1 --max=10 --cpu-percent=10

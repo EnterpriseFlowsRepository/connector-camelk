@@ -3,62 +3,73 @@
 <!-- camel-k: dependency=mvn:xalan:xalan:2.7.1 -->
 <!-- camel-k: dependency=camel-azure-servicebus -->
 
-
 <routes xmlns="http://camel.apache.org/schema/spring">
   
-      <!-- appel depuis /annonces -->
-      <route id="efr-sendtraces" trace="{{efr-sendtraces.trace}}">
+  <!-- Réception depuis queue -->
+  <route id="efr-sendtraces" trace="{{efr-sendtraces.trace}}">
 
-        <!-- on exeception, create a message on exceptions.exception -->
-        <onException useOriginalMessage="false">
-          <exception>java.lang.Exception</exception>
-          <setProperty name="routeId">
-            <simple>$routeId</simple>
-          </setProperty>
-          <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
-          <log message="history: ${messageHistory}" loggingLevel="WARN"/>
-          <toD uri="{{messaging.exceptions.exception}}" />
-        </onException>
+    <!-- on exeception, create a message on exceptions.exception -->
+    <onException useOriginalMessage="false">
+      <exception>java.lang.Exception</exception>
+      <setProperty name="routeId">
+        <simple>$routeId</simple>
+      </setProperty>
+      <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
+      <log message="history: ${messageHistory}" loggingLevel="WARN"/>
+      <toD uri="{{messaging.exceptions.exception}}" />
+    </onException>
 
-        <onException useOriginalMessage="true">
-          <exception>java.lang.Exception</exception>
-          <handled><constant>true</constant></handled>
-          <log message="Error: ${exception}  with Body: ${body}" loggingLevel="ERROR"/>
-          <toD uri="{{messaging.queue.traces-errors}}" />
-        </onException>
+    <onException useOriginalMessage="true">
+      <exception>java.lang.Exception</exception>
+      <handled><constant>true</constant></handled>
+      <log message="Error: ${exception}  with Body: ${body}" loggingLevel="ERROR"/>
+      <toD uri="{{messaging.queue.traces-errors}}" />
+    </onException>
 
-        <!-- read from topic -->
-        <from uri="{{messaging.queue.traces-traces}}" />
+    <!-- read from topic -->
+    <from uri="{{messaging.queue.traces-traces}}" />
+    <!-- Agreggate messages -->
+    <aggregate
+      aggregationStrategy="efr_message_aggregator"
+      completionSize="{{efr-sendtraces.aggregator.completionSize}}"
+      completionTimeout="{{efr-sendtraces.aggregator.completionTimeout}}"
+    >
+      <correlationExpression>
+        <!-- aggregate everything : use a constant. -->
+        <constant>true</constant>
+      </correlationExpression>
 
-        <!-- Get OIDC token -->
-        <step id="oidc">
-          <!-- Message text -->
-          <convertBodyTo type="String"/>
-          <setProperty name="body">
-            <simple>${body}</simple>
-          </setProperty>
+      <setProperty name="traces-count">
+        <simple>${body.length()}</simple>
+      </setProperty>
+      <log message="will send ${exchangeProperty[traces-count]} traces to EFR..." loggingLevel="DEBUG" />
 
-          <!-- get token -->
-          <to uri="direct:oidc-getToken-cache"/>
-          
-        </step>
+      <to uri="direct:efr-sendtraces-send-aggregated" />
+    </aggregate>
+  </route>
 
-        <!-- Send trace to EFR -->
-        <step id="efr">
-          <!-- Replace with original message -->
-          <setBody>
-            <simple>${exchangeProperty.body}</simple>
-          </setBody>
+  <route id="efr-sendtraces-send-aggregated">
+    <from uri="direct:efr-sendtraces-send-aggregated" />
 
-          <setProperty name="messageId">
-            <jsonpath suppressExceptions="true">$.message.id</jsonpath>
-          </setProperty>
+    <!-- Get OIDC token -->
+    <step id="oidc">
+      <convertBodyTo type="String"/>
+      <setProperty name="body">
+        <simple>${body}</simple>
+      </setProperty>
 
-          <!-- get token -->
-          <to uri="direct:efr-trace"/>
-          
-          <log message="Response for ${exchangeProperty.messageId}: ${header.CamelHttpResponseCode}" loggingLevel="INFO"  />
-        </step>
-     </route>
+      <!-- get token -->
+      <to uri="direct:oidc-getToken-cache"/>
+    </step>
+
+    <!-- Send trace to EFR -->
+    <step id="efr">
+      <!-- Replace with original message -->
+      <setBody>
+        <simple>${exchangeProperty.body}</simple>
+      </setBody>
+      <to uri="direct:efr-trace-multi"/>
+    </step>
+  </route>
 
 </routes>

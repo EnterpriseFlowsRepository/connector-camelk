@@ -10,9 +10,12 @@ kamel run \
     routes/servicesEFR.xml \
     routes/servicesOIDC.xml \
     routes/efr-sendtraces.xml \
+    ../utilitaires/processors/MessageAggregator.java \
     --property file:config/$ENVIRONMENT/run.properties \
     --property route.id=$MEDIATION \
     -t logging.level=INFO \
     --build-property file:config/build.properties \
     --label version=$VERSION \
+    -t toleration.enabled=true \
+    --trait toleration.taints="kubernetes.azure.com/scalesetpriority=spot:NoSchedule" \
     --dev

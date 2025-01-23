@@ -4,21 +4,9 @@
 
 <routes xmlns="http://camel.apache.org/schema/spring">
 
-  <route id="efr-trace">
-    <from uri="direct:efr-trace" />
-<!--
-    <onException useOriginalMessage="true">
-      <exception>java.lang.Exception</exception>
-      <handled><constant>false</constant></handled>
-      <setProperty name="routeId">
-        <simple>$routeId</simple>
-      </setProperty>
-      <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
-      <log message="history: ${messageHistory}" loggingLevel="WARN"/>
-      <log message="Response: ${body}" loggingLevel="ERROR"/>
-    </onException>
-  -->
-    <log message="postTrace: ${body}" loggingLevel="DEBUG"/>
+  <!-- Send ONE trace to EFR -->
+  <route id="efr-trace-mono">
+    <from uri="direct:efr-trace-mono" />
 
     <removeHeaders pattern="*"/>
     <setHeader name="Exchange.CONTENT_TYPE">
@@ -32,6 +20,25 @@
     </setHeader>
 
     <toD uri="{{efr.traces.post}}"/>
+  </route>
 
+  <!-- Send MULTIPLE trace to EFR -->
+  <route id="efr-trace-multi">
+    <from uri="direct:efr-trace-multi" />
+
+    <removeHeaders pattern="*"/>
+    <setHeader name="Exchange.CONTENT_TYPE">
+      <constant>application/json; charset=utf-8</constant>
+    </setHeader>
+    <setHeader name="Authorization">
+      <simple>Bearer ${exchangeProperty.OIDC-access_token}</simple>
+    </setHeader>
+    <setHeader name="CamelHttpMethod">
+      <constant>PUT</constant>
+    </setHeader>
+
+    <toD uri="{{efr.traces.put}}"/>
+
+    <log message="Sent ${exchangeProperty[traces-count]} traces to EFR: ${header.CamelHttpResponseCode}." loggingLevel="INFO" />
   </route>
 </routes>

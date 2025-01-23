@@ -16,6 +16,8 @@ kamel run \
     -t logging.level=INFO \
     --build-property file:config/build.properties \
     --label version=$VERSION \
+    -t toleration.enabled=true \
+    --trait toleration.taints="kubernetes.azure.com/scalesetpriority=spot:NoSchedule" \
     --dev
 
 

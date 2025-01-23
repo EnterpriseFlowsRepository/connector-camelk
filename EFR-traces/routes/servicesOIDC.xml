@@ -4,76 +4,74 @@
 
 <routes xmlns="http://camel.apache.org/schema/spring">
 
-      <!-- get a OIDC token in cache ? -->
-      <route id="oidc-getToken-cache">
-        <from uri="direct:oidc-getToken-cache" />
+  <!-- get a OIDC token in cache ? -->
+  <route id="oidc-getToken-cache">
+    <from uri="direct:oidc-getToken-cache" />
 
-        <!-- Time based cache -->
-        <toD uri="caffeine-cache://oidc?action=GET&amp;key={{auth.oidc.username}}&amp;evictionType=time_based"/>
+    <!-- Time based cache -->
+    <toD uri="caffeine-cache://oidc?action=GET&amp;key={{auth.oidc.username}}&amp;evictionType=time_based"/>
 
-        <choice>
-          <when>
-              <simple>${exchangeProperty['CaffeineConstants.ACTION_HAS_RESULT']}</simple>
+    <choice>
+      <when>
+          <simple>${exchangeProperty['CaffeineConstants.ACTION_HAS_RESULT']}</simple>
 
-              <!-- token in cache -->
-              <setProperty name="OIDC-access_token">
-                <simple>${body}</simple>
-              </setProperty>
-              
-          </when>
-          <otherwise>
-            
-            <!-- ask token -->
-            <toD uri="direct:oidc-getToken"/>
-
-            <!-- put value to cache -->
-            <setBody>
-              <simple>${exchangeProperty.OIDC-access_token}</simple>
-            </setBody>
-            
-            <toD uri="caffeine-cache://oidc?action=PUT&amp;key={{auth.oidc.username}}"/>
-
-          </otherwise>
-        </choice>
+          <!-- token in cache -->
+          <setProperty name="OIDC-access_token">
+            <simple>${body}</simple>
+          </setProperty>
+          
+      </when>
+      <otherwise>
         
-        <setBody><constant/></setBody>
-      </route>
+        <!-- ask token -->
+        <toD uri="direct:oidc-getToken"/>
 
-      <!-- Ask a new Token -->
-      <route id="oidc-getToken">
-        <from uri="direct:oidc-getToken" />
-        <log message="postTrace" loggingLevel="DEBUG"/>
-
-        <removeHeaders pattern="*"/>
-        <setHeader name="Exchange.CONTENT_TYPE">
-          <constant>application/x-www-form-urlencoded</constant>
-        </setHeader>
-        <setHeader name="CamelHttpMethod">
-          <constant>POST</constant>
-        </setHeader>
-
+        <!-- put value to cache -->
         <setBody>
-          <simple>{{auth.oidc.form}}</simple>
+          <simple>${exchangeProperty.OIDC-access_token}</simple>
         </setBody>
-        <toD uri="{{auth.oidc.url}}"/>
-
-        <!-- Check for errors -->
-        <choice>
-          <when>
-              <simple>${header.CamelHttpResponseCode} >= 300</simple>
-              <log message="Could not authenticate to OIDC. Error ${header.CamelHttpResponseCode}: ${body}" loggingLevel="ERROR" />
-              <stop />
-          </when>
-          <otherwise />
-        </choice>
         
-        <!-- exctract token to response -->
-        <setProperty name="OIDC-access_token">
-          <jsonpath suppressExceptions="true">$.access_token</jsonpath>
-        </setProperty>
+        <toD uri="caffeine-cache://oidc?action=PUT&amp;key={{auth.oidc.username}}"/>
 
-      </route>
+      </otherwise>
+    </choice>
+    
+    <setBody><constant/></setBody>
+  </route>
 
-      
+  <!-- Ask a new Token -->
+  <route id="oidc-getToken">
+    <from uri="direct:oidc-getToken" />
+    <log message="postTrace" loggingLevel="DEBUG"/>
+
+    <removeHeaders pattern="*"/>
+    <setHeader name="Exchange.CONTENT_TYPE">
+      <constant>application/x-www-form-urlencoded</constant>
+    </setHeader>
+    <setHeader name="CamelHttpMethod">
+      <constant>POST</constant>
+    </setHeader>
+
+    <setBody>
+      <simple>{{auth.oidc.form}}</simple>
+    </setBody>
+    <toD uri="{{auth.oidc.url}}"/>
+
+    <!-- Check for errors -->
+    <choice>
+      <when>
+          <simple>${header.CamelHttpResponseCode} >= 300</simple>
+          <log message="Could not authenticate to OIDC. Error ${header.CamelHttpResponseCode}: ${body}" loggingLevel="ERROR" />
+          <stop />
+      </when>
+      <otherwise />
+    </choice>
+    
+    <!-- exctract token to response -->
+    <setProperty name="OIDC-access_token">
+      <jsonpath suppressExceptions="true">$.access_token</jsonpath>
+    </setProperty>
+
+  </route>
 
 </routes>

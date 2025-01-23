@@ -22,4 +22,4 @@ kamel run \
     --wait
 
 kubectl delete -n $NAMESPACE hpa/$MEDIATION
-kubectl autoscale -n $NAMESPACE it $MEDIATION --min=1 --max=3 --cpu-percent=80
+kubectl autoscale -n $NAMESPACE it $MEDIATION --min=1 --max=3 --cpu-percent=50
