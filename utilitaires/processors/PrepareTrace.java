@@ -296,7 +296,7 @@ public class PrepareTrace extends RouteBuilder {
                 body.put("exception", exception);
 
                 exchange.getIn().setBody(body.toString());
-                LOG.info("Exception added to body. New body = " + exchange.getIn().getBody());
+                LOG.debug("Exception added to body.");
             }
         };
     }
