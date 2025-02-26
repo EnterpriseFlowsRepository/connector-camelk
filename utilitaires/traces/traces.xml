@@ -41,6 +41,9 @@
   
     <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']}" loggingLevel="DEBUG"/>
 
+    <!-- Add exception if needed -->
+    <process ref="addExceptionIfNeeded"/>
+
     <!-- publish trace -->
     <toD uri="{{messaging.queue.traces-traces}}" />
   </route>

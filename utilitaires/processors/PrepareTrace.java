@@ -1,6 +1,7 @@
 //Camel API
 // camel-k: dependency=mvn:org.apache.commons:commons-text:1.9
 // camel-k: dependency=mvn:org.apache.commons:commons-lang3:3.12.0
+// camel-k: dependency=mvn:org.json:json:20220924
 
 import org.apache.camel.*;
 import org.apache.camel.builder.RouteBuilder;
@@ -12,19 +13,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.eclipse.microprofile.config.*;
+import org.json.*;
 
 public class PrepareTrace extends RouteBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrepareTrace.class);
 
     private static final List<String> IGNORED_HEADERS = List.of("Set-Cookie");
+    private static final Set<String> TO_DELETE_HEADERS = Set.of("Set-Cookie");
 
     @Override
     public void configure() throws Exception {}
 
     @BindToRegistry
     public static Processor prepareJsonTrace() {
-
         return new Processor() {
     
             // Retreive Quarkus config
@@ -44,6 +46,10 @@ public class PrepareTrace extends RouteBuilder {
              * @param ex exchange
              */
             public void process(Exchange exchange) throws Exception {
+                // Delete some headers
+                for(String header : TO_DELETE_HEADERS) {
+                    exchange.getIn().removeHeader(header);
+                }
                 
                 // 1. Read all headers to generate an array
                 StringJoiner headers = new StringJoiner(",");
@@ -267,11 +273,31 @@ public class PrepareTrace extends RouteBuilder {
                 if ((status == null) || (status.length()==0)) {
                     exchange.setProperty("status", "Error");
                 }
-                //json body
-                //exchange.getIn().setBody(newBody);
-
             }
         };
 
+    }
+
+    @BindToRegistry
+    public static Processor addExceptionIfNeeded() {
+        return new Processor() {
+            public void process(Exchange exchange) {
+                // No 'exception-code' property : ignore this
+                if (exchange.getProperty("exception-code") == null)
+                    return;
+
+                JSONObject body = new JSONObject( exchange.getIn().getBody(String.class) );
+
+                JSONObject exception = new JSONObject();
+                exception.put("code", exchange.getProperty("exception-code", String.class));
+                exception.put("detail", Objects.requireNonNullElseGet(exchange.getProperty("exception-message"), () -> exchange.getProperty("exception-code", String.class)));
+                exception.put("stacktrace", "");
+                exception.put("className", "Throwed");
+                body.put("exception", exception);
+
+                exchange.getIn().setBody(body.toString());
+                LOG.info("Exception added to body. New body = " + exchange.getIn().getBody());
+            }
+        };
     }
 }
