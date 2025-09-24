@@ -8,7 +8,7 @@
   <!-- Réception depuis queue -->
   <route id="efr-sendtraces" trace="{{efr-sendtraces.trace}}">
 
-    <!-- on exeception, create a message on exceptions.exception -->
+    <!-- on exception, create a message on exceptions.exception -->
     <onException useOriginalMessage="false">
       <exception>java.lang.Exception</exception>
       <setProperty name="routeId">
@@ -28,6 +28,7 @@
 
     <!-- read from topic -->
     <from uri="{{messaging.queue.traces-traces}}" />
+    
     <!-- Agreggate messages -->
     <aggregate
       aggregationStrategy="efr_message_aggregator"
@@ -44,6 +45,13 @@
       </setProperty>
       <log message="will send ${exchangeProperty[traces-count]} traces to EFR..." loggingLevel="DEBUG" />
 
+      <!-- Save original message -->
+      <convertBodyTo type="String"/>
+      <setProperty name="allTracesBody">
+        <simple>${body}</simple>
+      </setProperty>
+      <process ref="retry__initialize"/>
+
       <to uri="direct:efr-sendtraces-send-aggregated" />
     </aggregate>
   </route>
@@ -53,21 +61,13 @@
 
     <!-- Get OIDC token -->
     <step id="oidc">
-      <convertBodyTo type="String"/>
-      <setProperty name="body">
-        <simple>${body}</simple>
-      </setProperty>
-
-      <!-- get token -->
       <to uri="direct:oidc-getToken-cache"/>
     </step>
 
     <!-- Send trace to EFR -->
     <step id="efr">
       <!-- Replace with original message -->
-      <setBody>
-        <simple>${exchangeProperty.body}</simple>
-      </setBody>
+      <setBody><simple>${exchangeProperty[allTracesBody]}</simple></setBody>
       <to uri="direct:efr-trace-multi"/>
     </step>
   </route>

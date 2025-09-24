@@ -1,11 +1,13 @@
-echo "Déploiement vers $ENVIRONMENT."
-
 MEDIATION=efr-apitraces
 WHEN=$(date +%D-%R)
 
 [[ -z ${NAMESPACE+x} ]] && echo "[X][efr-traces] Variable non définie: NAMESPACE." && exit 8
+[[ -z ${ENVIRONMENT+x} ]] && echo "[X][efr-traces] Variable non définie: ENVIRONMENT." && exit 8
+[[ -z ${VERSION+x} ]] && echo "[X][efr-traces] Variable non définie: VERSION." && exit 8
 
+echo "Déploiement vers $ENVIRONMENT."
 echo "Mediation $MEDIATION version $VERSION."
+
 kamel run \
     --name $MEDIATION \
     -n $NAMESPACE -x $NAMESPACE \

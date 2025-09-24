@@ -12,37 +12,31 @@
     <toD uri="caffeine-cache://oidc?action=GET&amp;key={{auth.oidc.username}}&amp;evictionType=time_based"/>
 
     <choice>
-      <when>
-          <simple>${exchangeProperty['CaffeineConstants.ACTION_HAS_RESULT']}</simple>
-
-          <!-- token in cache -->
-          <setProperty name="OIDC-access_token">
-            <simple>${body}</simple>
-          </setProperty>
-          
+      <!-- token in cache -->
+      <when> <simple>${exchangeProperty['CaffeineConstants.ACTION_HAS_RESULT']}</simple>
+        <setProperty name="OIDC-access_token">
+          <simple>${body}</simple>
+        </setProperty>
       </when>
+      <!-- ask for token to auth -->
       <otherwise>
-        
-        <!-- ask token -->
-        <toD uri="direct:oidc-getToken"/>
+        <to uri="direct:oidc-getToken"/>
 
         <!-- put value to cache -->
         <setBody>
           <simple>${exchangeProperty.OIDC-access_token}</simple>
         </setBody>
-        
         <toD uri="caffeine-cache://oidc?action=PUT&amp;key={{auth.oidc.username}}"/>
-
       </otherwise>
     </choice>
     
+    <!-- Cler body-->
     <setBody><constant/></setBody>
   </route>
 
   <!-- Ask a new Token -->
   <route id="oidc-getToken">
     <from uri="direct:oidc-getToken" />
-    <log message="postTrace" loggingLevel="DEBUG"/>
 
     <removeHeaders pattern="*"/>
     <setHeader name="Exchange.CONTENT_TYPE">
@@ -59,19 +53,18 @@
 
     <!-- Check for errors -->
     <choice>
-      <when>
-          <simple>${header.CamelHttpResponseCode} >= 300</simple>
-          <log message="Could not authenticate to OIDC. Error ${header.CamelHttpResponseCode}: ${body}" loggingLevel="ERROR" />
-          <stop />
+      <when> <simple>${header.CamelHttpResponseCode} >= 300</simple>
+        <log message="Could not authenticate to OIDC. Error ${header.CamelHttpResponseCode}: ${body}" loggingLevel="ERROR" />
+        <process ref="retry__incrementOrStop"/>
+        <delay><constant>{{efr-sendtraces.retry.delay}}</constant></delay>
+        <to uri="direct:efr-sendtraces-send-aggregated" />
+        <stop />
       </when>
-      <otherwise />
     </choice>
     
     <!-- exctract token to response -->
     <setProperty name="OIDC-access_token">
       <jsonpath suppressExceptions="true">$.access_token</jsonpath>
     </setProperty>
-
   </route>
-
 </routes>

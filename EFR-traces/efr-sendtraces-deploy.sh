@@ -1,10 +1,11 @@
-echo "Déploiement vers $ENVIRONMENT."
-
 MEDIATION=efr-sendtraces
 
-echo "Mediation $MEDIATION version $VERSION."
-
 [[ -z ${NAMESPACE+x} ]] && echo "[X][efr-traces] Variable non définie: NAMESPACE." && exit 8
+[[ -z ${ENVIRONMENT+x} ]] && echo "[X][efr-traces] Variable non définie: ENVIRONMENT." && exit 8
+[[ -z ${VERSION+x} ]] && echo "[X][efr-traces] Variable non définie: VERSION." && exit 8
+
+echo "Déploiement vers $ENVIRONMENT."
+echo "Mediation $MEDIATION version $VERSION."
 
 kamel run \
     --name $MEDIATION \
@@ -12,6 +13,7 @@ kamel run \
     routes/servicesEFR.xml \
     routes/servicesOIDC.xml \
     routes/efr-sendtraces.xml \
+    routes/RetryProcessor.java \
     ../utilitaires/processors/MessageAggregator.java \
     --property file:config/$ENVIRONMENT/run.properties \
     --property route.id=$MEDIATION \

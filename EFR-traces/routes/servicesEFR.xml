@@ -37,8 +37,19 @@
       <constant>PUT</constant>
     </setHeader>
 
-    <toD uri="{{efr.traces.put}}"/>
+    <doTry>
+      <toD uri="{{efr.traces.put}}"/>
+      <log message="Sent ${exchangeProperty[traces-count]} traces to EFR: ${header.CamelHttpResponseCode}." loggingLevel="INFO" />
 
-    <log message="Sent ${exchangeProperty[traces-count]} traces to EFR: ${header.CamelHttpResponseCode}." loggingLevel="INFO" />
+      <doCatch>
+        <exception>org.apache.camel.http.base.HttpOperationFailedException</exception>
+        <log message="HTTP Operation Exception. Message: ${exception.message}" loggingLevel="ERROR" />
+        <process ref="retry__incrementOrStop"/>
+        <delay><constant>{{efr-sendtraces.retry.delay}}</constant></delay>
+
+        <to uri="direct:efr-sendtraces-send-aggregated" />
+        <stop/>
+      </doCatch>
+    </doTry>
   </route>
 </routes>
