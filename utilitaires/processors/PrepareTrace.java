@@ -172,24 +172,16 @@ public class PrepareTrace extends RouteBuilder {
                         if (stack.length()>STACK_MAX_SIZE) {
                             stack = stack.substring(0, STACK_MAX_SIZE-3)+"...";
                         }
-
-                        exchange.setProperty("exception-stacktrace", 
-                            StringEscapeUtils.escapeJson(
-                                stack
-                                )
-                            );
+                        exchange.setProperty("exception-stacktrace", StringEscapeUtils.escapeJson(stack));
 
                         String message = exception.getMessage();
-
-                        exchange.setProperty("exception-message", 
-                            StringEscapeUtils.escapeJson(
-                                message
-                                )
-                            );
-
-                        boolean codeFound = false;
+                        exchange.setProperty("exception-message", StringEscapeUtils.escapeJson(message));
 
                         // Retreive and test with content
+                        // Le but est de trouver un code d'exception dans les propriétés.
+                        // Ces dernières sont définies dans le fichier de config au format "traces.errors.CODE.regex=RegEx"
+                        // Si rien n'est trouvé, on met le nom de la classe de l'exception.
+                        boolean codeFound = false;
                         for(String property: config.getPropertyNames()) {
                             try {
                                 if (property.matches("traces\\.errors.*regex")) {
@@ -209,20 +201,19 @@ public class PrepareTrace extends RouteBuilder {
                                         );
                                         codeFound = true;
                                     } else {
-                                        LOG.info("Does not match with regEx: "+contentToTest);
+                                        LOG.debug("Does not match with regEx: "+contentToTest);
                                     }
                                 }
                             } catch (Exception e) {
-                                LOG.warn("Impossible to parse "+property);
+                                LOG.warn("Impossible to parse error regex <"+property + ">");
                             }
                         }
 
                         if (codeFound == false) {
-                            LOG.warn("No error code for '"+message+"'. Add an traces.errors.CODE.regex=RegEx .");
+                            LOG.warn("No error code for '"+message+"'. Add an traces.errors.CODE.regex=RegEx. Using exception class name instead.");
+                            exchange.setProperty("exception-code", exception.getClass().getSimpleName());
                         }
-
-                    } 
-                    
+                    }
                 } catch (Exception e) {
                     LOG.error("Error dur Exception process", e);
                 }
@@ -300,4 +291,5 @@ public class PrepareTrace extends RouteBuilder {
             }
         };
     }
+
 }
