@@ -13,7 +13,7 @@
   "route": {
     "name": "${properties:route.name}",
     "version": "${properties:route.version}",
-    "id": "${properties:route.id}",
+    "id": "${exchangeProperty.routeId}",
     "step": "${exchangeProperty.step}",
     "description": "${exchangeProperty.description}"
   },

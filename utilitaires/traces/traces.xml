@@ -23,6 +23,22 @@
     <!-- Transform context to JSON properties: body, headers and business -->
     <process ref="prepareJsonTrace"/>
 
+    <!-- Select routeId -->
+    <choice>
+      <when> 
+        <simple>${exchangeProperty.routeId_override} != null</simple>
+        <setProperty name="routeId">
+          <simple>${exchangeProperty.routeId_override}</simple>
+        </setProperty>
+      </when>
+      <otherwise>
+        <setProperty name="routeId">
+          <constant>{{route.id}}</constant>
+        </setProperty>
+      </otherwise>
+    </choice>
+
+    <!-- Select resource -->
     <choice>
       <when>
         <!-- Message without correlation ID -->
@@ -39,7 +55,7 @@
       </otherwise>
     </choice>
   
-    <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']}" loggingLevel="DEBUG"/>
+    <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']} > ${body}" loggingLevel="INFO"/>
 
     <!-- Add exception if needed -->
     <process ref="addExceptionIfNeeded"/>
