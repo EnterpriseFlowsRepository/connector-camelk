@@ -55,7 +55,7 @@
       </otherwise>
     </choice>
   
-    <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']} > ${body}" loggingLevel="INFO"/>
+    <log message="Trace for: ${id} with correlation-id ${headers['correlation-id']} > ${body}" loggingLevel="DEBUG"/>
 
     <!-- Add exception if needed -->
     <process ref="addExceptionIfNeeded"/>
