@@ -264,6 +264,22 @@ public class PrepareTrace extends RouteBuilder {
                 if ((status == null) || (status.length()==0)) {
                     exchange.setProperty("status", "Error");
                 }
+
+                // Conserve tous les types primitifs (String, Number, Boolean, UUID, Date, etc.)
+                // et retire uniquement les objets Java complexes (comme JobDetailImpl)
+                exchange.getIn().getHeaders().entrySet().removeIf(entry -> {
+                    Object val = entry.getValue();
+                    if (val == null) return false;
+                    return !(val instanceof String 
+                        || val instanceof Number 
+                        || val instanceof Boolean 
+                        || val instanceof Character 
+                        || val instanceof java.util.UUID 
+                        || val instanceof java.util.Date 
+                        || val instanceof java.time.temporal.Temporal
+                        || val instanceof byte[]
+                        || val instanceof java.util.Map);
+                });
             }
         };
 
