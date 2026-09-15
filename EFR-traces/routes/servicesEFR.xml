@@ -43,7 +43,15 @@
 
       <doCatch>
         <exception>org.apache.camel.http.base.HttpOperationFailedException</exception>
-        <log message="HTTP Operation Exception. Message: ${exception.message}" loggingLevel="ERROR" />
+        <log message="HTTP Operation Exception. Message: ${exception.message}. API response = ${exception.responseBody}." loggingLevel="ERROR" />
+        <choice>
+          <when>
+            <simple>${exception.statusCode} == 400 || ${exception.statusCode} == 406</simple>
+            <log message="Bad trace format. SENT BODY = ${body}" loggingLevel="ERROR" />
+            <stop/>
+          </when>
+        </choice>
+
         <process ref="retry__incrementOrStop"/>
         <delay><constant>{{efr-sendtraces.retry.delay}}</constant></delay>
 
