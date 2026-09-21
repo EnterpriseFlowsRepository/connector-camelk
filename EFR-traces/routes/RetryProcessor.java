@@ -53,6 +53,9 @@ public class RetryProcessor extends RouteBuilder {
 
                 // Stop
                 LOG.error("No more retries left. Stopping.");
+
+                ProducerTemplate producer = exchange.getContext().createProducerTemplate();
+                producer.sendBody("direct:push-to-error-queue", exchange.getIn().getBody());
                 exchange.setRouteStop(true);
             }
         };
