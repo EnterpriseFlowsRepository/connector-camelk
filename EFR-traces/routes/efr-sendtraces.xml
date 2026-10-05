@@ -39,9 +39,6 @@
         <constant>true</constant>
       </correlationExpression>
 
-      <setProperty name="traces-count">
-        <simple>${body.length()}</simple>
-      </setProperty>
       <log message="will send ${exchangeProperty[traces-count]} traces to EFR..." loggingLevel="DEBUG" />
 
       <!-- Save original message -->

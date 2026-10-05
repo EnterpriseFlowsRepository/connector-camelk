@@ -22,6 +22,8 @@ kamel run \
     --label mediation=$MEDIATION --label version=$VERSION \
     -t toleration.enabled=true \
     -t toleration.taints="kubernetes.azure.com/scalesetpriority=spot:NoSchedule" \
+    -t container.request-memory=512Mi \
+    -t container.limit-memory=1024Mi \
     --wait
 
 kubectl delete -n $NAMESPACE hpa/$MEDIATION
