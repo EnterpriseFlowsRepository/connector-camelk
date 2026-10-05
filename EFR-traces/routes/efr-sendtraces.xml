@@ -15,14 +15,14 @@
       </setProperty>
       <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
       <log message="history: ${messageHistory}" loggingLevel="WARN"/>
-      <toD uri="{{messaging.exceptions.exception}}" />
+      <to uri="{{messaging.exceptions.exception}}" />
     </onException>
 
     <onException useOriginalMessage="true">
       <exception>java.lang.Exception</exception>
       <handled><constant>true</constant></handled>
       <log message="Error: ${exception}  with Body: ${body}" loggingLevel="ERROR"/>
-      <toD uri="{{messaging.queue.traces-errors}}" />
+      <to uri="{{messaging.queue.traces-errors}}" />
     </onException>
 
     <!-- read from topic -->
@@ -75,6 +75,6 @@
   <route id="efr-push-to-error-queue">
     <from uri="direct:push-to-error-queue" />
     <log message="Pushing message to error queue: ${body}" loggingLevel="WARN"/>
-    <toD uri="{{messaging.queue.traces-errors}}" />
+    <to uri="{{messaging.queue.traces-errors}}" />
   </route>
 </routes>

@@ -13,7 +13,7 @@
       <exception>java.lang.Exception</exception>
       <log message="Exception: ${exception.message}" loggingLevel="ERROR"/>
       <log message="history: ${messageHistory}" loggingLevel="ERROR"/>
-      <toD uri="{{messaging.exceptions.exception}}" />
+      <to uri="{{messaging.exceptions.exception}}" />
 
       <!-- return HTTP response -->
       <setHeader name="CamelHttpResponseCode">
@@ -35,7 +35,7 @@
       </setHeader>
       
       <!-- pub event -->
-      <toD uri="{{messaging.queue.traces-traces}}" />
+      <to uri="{{messaging.queue.traces-traces}}" />
 
     </step>
 

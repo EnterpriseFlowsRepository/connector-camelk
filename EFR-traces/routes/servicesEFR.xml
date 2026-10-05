@@ -19,7 +19,7 @@
       <constant>POST</constant>
     </setHeader>
 
-    <toD uri="{{efr.traces.post}}"/>
+    <to uri="{{efr.traces.post}}"/>
   </route>
 
   <!-- Send MULTIPLE trace to EFR -->
@@ -38,7 +38,7 @@
     </setHeader>
 
     <doTry>
-      <toD uri="{{efr.traces.put}}"/>
+      <to uri="{{efr.traces.put}}"/>
       <log message="Sent ${exchangeProperty[traces-count]} traces to EFR: ${header.CamelHttpResponseCode}." loggingLevel="INFO" />
 
       <doCatch>

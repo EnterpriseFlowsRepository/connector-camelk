@@ -13,24 +13,25 @@
 
     <choice>
       <!-- token in cache -->
-      <when> <simple>${exchangeProperty['CaffeineConstants.ACTION_HAS_RESULT']}</simple>
+      <when> <simple>${header.CamelCaffeineActionHasResult} == true</simple>
         <setProperty name="OIDC-access_token">
           <simple>${body}</simple>
         </setProperty>
       </when>
       <!-- ask for token to auth -->
       <otherwise>
+        <log message="Requesting new OIDC token from auth server." loggingLevel="INFO" />
         <to uri="direct:oidc-getToken"/>
 
         <!-- put value to cache -->
         <setBody>
           <simple>${exchangeProperty.OIDC-access_token}</simple>
         </setBody>
-        <toD uri="caffeine-cache://oidc?action=PUT&amp;key={{auth.oidc.username}}"/>
+        <to uri="caffeine-cache://oidc?action=PUT&amp;key={{auth.oidc.username}}&amp;evictionType=time_based"/>
       </otherwise>
     </choice>
     
-    <!-- Cler body-->
+    <!-- Clear body-->
     <setBody><constant/></setBody>
   </route>
 
@@ -49,7 +50,7 @@
     <setBody>
       <simple>{{auth.oidc.form}}</simple>
     </setBody>
-    <toD uri="{{auth.oidc.url}}"/>
+    <to uri="{{auth.oidc.url}}"/>
 
     <!-- Check for errors -->
     <choice>
